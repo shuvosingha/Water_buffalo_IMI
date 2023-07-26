@@ -1,0 +1,865 @@
+---
+title: "IMI pathogen in Bangladesh"
+author: "Shuvo Singha"
+date: "2023-02-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+
+
+
+
+## Loading the library
+
+```{r loading package}
+
+library(lme4) # glmer
+library(car)  # Anova
+library(multcomp)
+library(multcompView)
+library(pROC)
+library(emmeans)
+library(lmerTest)
+library(ggplot2)
+library(gmodels)
+library(ggpubr)
+library(sjstats)
+library(AUC)
+library(plyr)
+library(dplyr)
+
+```
+
+
+
+
+## Importing dataset
+
+```{r reading in data}
+ data=read.csv("20221202_SCM_pathogens.csv", header=T, sep=",")
+
+# FOR CALCULATING AIC
+
+# data=read.csv("20221202_SCM_pathogens_NASM_AIC_cleaned.csv", header=T, sep=",")
+
+
+#Cross checking data structure
+#use the str command to produce a summary of the dataset:
+str(data)
+
+```
+
+
+## Cross-check the variables
+
+```{r calculating the variables}
+
+
+#tabulation of outcome variables
+
+table(data$Type.of.bacteria)
+table(data$Bacteria_groups)
+table(data$Bacteria_groups_code)
+table(data$NASM)
+table(data$NASM)
+table(data$Mammaliicoccus)
+table(data$Gram_neg)
+table(data$Other_bac)
+table(data$Staph_au)
+table(data$Strept)
+
+#tabulation of quarter level variables
+
+table(data$CMT.score)
+table(data$SCM.Type)
+table(data$QP)
+table(data$QP_RL)
+table(data$QP_FH)
+table(data$T_shape)
+table(data$T_lesion)
+table(data$T_congenital1)
+
+#tabulation of buffalo (animal) level variables
+
+table(data$B_mastitis)
+table(data$Age_code)
+table(data$Breed_Code)
+table(data$BCS_code)
+table(data$Milk.yield_code)
+table(data$L_stage.code)
+table(data$Pregnancy)
+table(data$Parity_code)
+table(data$U_symmetry)
+table(data$U_shape)
+table(data$T_block)
+table(data$T_congenital)
+table(data$T_position)
+table(data$C_hind_quarter)
+table(data$U_dis)
+table(data$H_any_dis)
+table(data$H_lameness)
+table(data$H_cm)
+table(data$H_abort)
+table(data$R_dis)
+table(data$H_abort)
+table(data$H_calf_m)
+
+#tabulation of farm level variables
+
+table(data$District)
+table(data$F_mastitis)
+table(data$R_system)
+table(data$Rs_code)
+table(data$Month)
+table(data$Season)
+table(data$Education)
+table(data$Breeds)
+table(data$Breed_code)
+table(data$B_source)
+table(data$Wash_buffalo)
+table(data$Control_milk)
+table(data$Wash_udder)
+table(data$T_dipping)
+table(data$T_hand_milk)
+table(data$Fre_milking)
+table(data$Udder_hygiene)
+table(data$Milker_hygiene)
+table(data$N_milker)
+table(data$Milk_cm_last)
+
+```
+
+
+
+
+## Description of the outcome variable
+
+```{r calculating the outcome}
+
+IMI<-table(data$QP)
+prop.table(IMI)
+
+```
+
+
+
+
+## Converting into factor variables
+
+```{r converting the factor}
+
+
+
+#tabulation of outcome variables
+
+data$Bacteria_groups_code=factor(data$Bacteria_groups_code)
+data$NASM=factor(data$NASM)
+data$NASM=factor(data$NASM)
+data$Mammaliicoccus=factor(data$Mammaliicoccus)
+data$Gram_neg=factor(data$Gram_neg)
+data$Other_bac=factor(data$Other_bac)
+data$Staph_au=factor(data$Staph_au)
+data$Strept=factor(data$Strept)
+
+#tabulation of quarter level variables
+
+data$CMT.score=factor(data$CMT.score)
+data$SCM.Type=factor(data$SCM.Type)
+data$QP=factor(data$QP)
+data$QP_RL=factor(data$QP_RL)
+data$QP_FH=factor(data$QP_FH)
+data$T_shape=factor(data$T_shape)
+data$T_lesion=factor(data$T_lesion)
+data$T_congenital1=factor(data$T_congenital1)
+
+#tabulation of buffalo (animal) level variables
+
+data$B_mastitis=factor(data$B_mastitis)
+data$Age_code=factor(data$Age_code)
+data$Breed_Code=factor(data$Breed_Code)
+data$BCS_code=factor(data$BCS_code)
+data$BCS1=factor(data$BCS1)
+data$Milk.yield_code=factor(data$Milk.yield_code)
+data$L_stage.code=factor(data$L_stage.code)
+data$Pregnancy=factor(data$Pregnancy)
+data$Parity_code=factor(data$Parity_code)
+data$U_symmetry=factor(data$U_symmetry)
+data$U_shape=factor(data$U_shape)
+data$T_block=factor(data$T_block)
+data$T_congenital=factor(data$T_congenital)
+data$T_position=factor(data$T_position)
+data$C_hind_quarter=factor(data$C_hind_quarter)
+data$U_dis=factor(data$U_dis)
+data$H_any_dis=factor(data$H_any_dis)
+data$H_lameness=factor(data$H_lameness)
+data$H_cm=factor(data$H_cm)
+data$H_calf_m=factor(data$H_calf_m)
+
+#tabulation of farm level variables
+
+data$District=factor(data$District)
+data$F_mastitis=factor(data$F_mastitis)
+data$R_system=factor(data$R_system)
+data$Rs_code=factor(data$Rs_code)
+data$Month=factor(data$Month)
+data$Season=factor(data$Season)
+data$Education=factor(data$Education)
+data$Breeds=factor(data$Breeds)
+data$Breed_code=factor(data$Breed_code)
+data$Feeding_S=factor(data$Feeding_S)
+data$B_source=factor(data$B_source)
+data$Control_milk=factor(data$Control_milk)
+data$Wash_buffalo=factor(data$Wash_buffalo)
+data$Control_milk=factor(data$Control_milk)
+data$Wash_udder=factor(data$Wash_udder)
+data$T_dipping=factor(data$T_dipping)
+data$T_hand_milk=factor(data$T_hand_milk)
+data$Fre_milking=factor(data$Fre_milking)
+data$Udder_hygiene=factor(data$Udder_hygiene)
+data$Milker_hygiene=factor(data$Milker_hygiene)
+data$N_milker=factor(data$N_milker)
+data$Milk_cm_last=factor(data$Milk_cm_last)
+
+
+```
+
+table(data$Control_milk)
+
+## Recoding some variables
+
+```{r calculating Data preparation NASM animal}
+
+table(data$BCS_code1)
+
+
+data$Control_milk1 <-recode(data$Control_milk,"0"="No","1"="0Yes")
+data$BCS_code1 <-recode(data$BCS_code,"3"="Good","0"="Poor","1"="Moderate","2"="Fatty")
+data$C_hind_quarter <-recode(data$C_hind_quarter,"1"="Excellent","2"="Good","3"="Poor")
+#data$U_symmetry <-recode(data$U_symmetry,"1"="Symmetrical","2"="0Asymmetrical")
+data$U_symmetry1 <-recode(data$U_symmetry,"1"="Asymmetrical","2"="0Symmetrical")
+data$B_source1 <-recode(data$B_source,"0"="Own stock","1"="Purchased from others herd","2"="Both", "3"="0Source unknown")
+data$Milker_hygiene1 <-recode(data$Milker_hygiene,"1"="Excellent","2"="0Good", "3"="Poor")
+data$Milker_hygiene2 <-recode(data$Milker_hygiene,"1"="Excellent","2"="Excellent", "3"="Poor")
+data$Milker_hygiene2 <-recode(data$Milker_hygiene,"1"="Excellent","2"="Excellent", "3"="Poor")
+data$B_source1 <-recode(data$B_source,"0"="Own stock","1"="0Purchased from others herd","2"="Both", "3"="0Source unknown")
+data$Breed_code1 <-recode(data$Breed_code,"0"="Mixed type","1"="River type", "2"="0Swamp type")
+data$Wash_udder1 <-recode(data$Wash_udder,"0"="No","1"="0Yes")
+data$Breed_Code1 <-recode(data$Breed_Code,"1"="Indigenous","2"="Crossbreed")
+data$T_congenital <-recode(data$T_congenital,"0"="1Yes","1"="0No")
+
+```
+
+
+## How to aggregate data by clusters
+
+```{r calculating Data preparation NASM animal}
+
+
+str(data)
+aggregateddata<- aggregate(Fre_milking~FID,FUN="median",data=data)
+help(aggregate)
+
+head(aggregateddata)
+
+data$Fre_milking
+
+```
+
+
+
+
+### Univariable analysis Animal level variables
+
+## NASM (Breed code)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Breed_Code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (BCS code)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~BCS_code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Milk yield)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Milk.yield_code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Lactation stage in months)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~L_stage.code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+
+
+## NASM (Pregnancy)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Pregnancy + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (Parity_code)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Parity_code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (U_symmetry)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~U_symmetry + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (U_shape)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~U_shape + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (T_block)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~T_block + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (T_congenital)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~T_congenital + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (T_position)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~T_position + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (C_hind_quarter)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~C_hind_quarter + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (U_dis)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~U_dis + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (H_any_dis)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~H_any_dis + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (H_cm)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~H_cm + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+## NASM (H_calf_m)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~H_calf_m + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+       
+```
+
+
+
+
+
+
+### Univariable analysis Farm level variables
+
+## NASM (Distrct)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~District + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (BMSCC)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~F_mastitis + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+## NASM (Rs_code)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Rs_code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Month)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Month + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Season)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Season + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Education)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Education + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Breeds)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Breed_code + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Feeding_S)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Feeding_S + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (B_source)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~B_source + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+## NASM (Control_milk)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Control_milk + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Wash_udder)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Wash_udder1 + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Dry_udder)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Dry_udder + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (T_hand_milk)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~T_hand_milk + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Fre_milking)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Fre_milking + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Udder_hygiene)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Udder_hygiene + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Milker_hygiene)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Milker_hygiene + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (N_milker)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~N_milker + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+## NASM (Milk_cm_last)
+
+```{r calculating multivariable logistic regression}
+
+mult.glmer<-glmer(NASM~Milk_cm_last + (1|AID/FID), family = binomial(), data=data)
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+       
+```
+
+
+
+### Multivariable analysis
+
+
+## NASM 
+
+```{r calculating multivariable logistic regression}
+
+data$BCS1[data$BCS1 == ""] <- NA
+
+# mult.glmer<-glmer(NASM~BCS1 + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2 + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+Udder_hygiene + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+B_source1 + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+District + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+R_system + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+Season + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+Wash_udder1 + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+U_symmetry1 + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+Parity_code + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+L_stage.code + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+U_shape + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+H_calf_m + (1|AID/FID), family = binomial(), data=data)
+
+# mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+H_cm + (1|AID/FID), family = binomial(), data=data)
+ 
+  mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2+N_milker + (1|AID/FID), family = binomial(), data=data)
+ 
+summary(mult.glmer)
+Anova(mult.glmer)
+
+# drop1(mult.glmer, test = "Chisq")
+
+# performance::icc(mult.glmer)
+
+```
+
+
+
+
+table(data$U_symmetry, data$U_shape)
+
+chisq.test(data$F_mastitis, data$Milker_hygiene2)
+
+chisq.test(data$T_hand_milk, data$Milker_hygiene2)
+
+prop.table(table(data$T_hand_milk,data$Milker_hygiene2),1)
+
+prop.table(table(data$F_mastitis,data$Milker_hygiene2),1)
+
+
+
+## Final multivariable model with ODDS ratio and 95 percent CI
+
+```{r calculating multivariable logistic regression}
+
+# data1 <- data[complete.cases(data$BCS1), ]
+
+# data2 <- data1[complete.cases(data1$C_hind_quarter), ]
+
+# data3 <- data2[complete.cases(data1$Milker_hygiene2), ]
+
+ mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2 + (1|AID/FID), family = binomial(), data=data)
+
+#mult.glmer<-glmer(NASM~BCS1+C_hind_quarter+Milker_hygiene2 + (1+AID|FID), family = binomial(), data=data)
+
+
+summary(mult.glmer)
+Anova(mult.glmer)
+
+cc<- confint(mult.glmer,parm="beta_",method="Wald") 
+ctab <- cbind(est=fixef(mult.glmer),cc)
+rtab <- exp(ctab)
+print(rtab,digits=3)
+
+
+# drop1(mult.glmer, test = "Chisq")
+
+# performance::icc(mult.glmer)
+
+       
+```
+
+
+
+
+
+
+
+
+
+## Multivariable logistic regression
+
+```{r calculating Data preparation NASM animal}
+
+# data1 <- data[complete.cases(data$C_hind_quarter), ]
+
+#data3 <- data2[complete.cases(data1$U_symmetry), ]
+
+```
+
+
+
+
+
+
+
+
+table(data$Udder_hygiene ,data$C_hind_quarter)
+prop1 <- table(data$Udder_hygiene ,data$C_hind_quarter)
+prop.table(prop1)
+chisq.test(data$Udder_hygiene,data$C_hind_quarter)
+
+
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
